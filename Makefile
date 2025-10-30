@@ -50,13 +50,14 @@ deploy/store-code:
 		--gas auto \
 		--gas-adjustment $(GAS_ADJ) \
 		--fees $(FEES) \
+		--keyring-backend=test \
 		-y
 
 INSTANTIATE_MSG := $(shell cat configs/instantiate_msg.json)
 # Ensure config.mk exists and has valid values.
 # If missing, run `make setup` to create it from config.mk.example, then update values manually.
 deploy/instantiate:
-	gaiad tx wasm instantiate $(CONTRACT_CODE_ID) '$(INSTANTIATE_MSG)' \
+	$(DAEMON) tx wasm instantiate $(CONTRACT_CODE_ID) '$(INSTANTIATE_MSG)' \
     --label "bondex_bond_account_instantiate_stub" \
     --from $(FROM) \
     --chain-id $(CHAIN_ID) \
@@ -65,4 +66,26 @@ deploy/instantiate:
     --gas auto \
     --gas-adjustment $(GAS_ADJ) \
     --fees $(FEES) \
+    --keyring-backend=test \
     -y
+
+ISSUE_BOND_SERIES_MSG := $(shell cat configs/issue_bond_series_msg.json)
+# Ensure config.mk exists and has valid values.
+# If missing, run `make setup` to create it from config.mk.example, then update values manually.
+execute/issue-bond-series:
+	$(DAEMON) tx wasm execute $(CONTRACT_ADDR) '$(ISSUE_BOND_SERIES_MSG)' \
+    --from $(FROM) \
+    --chain-id $(CHAIN_ID) \
+    --node $(NODE_URL) \
+    --gas auto \
+    --gas-adjustment $(GAS_ADJ) \
+    --fees $(FEES) \
+    --keyring-backend=test \
+    -y
+
+GET_CONFIG_QUERY := $(shell cat configs/get_config_query.json)
+# Ensure config.mk exists and has valid values.
+# If missing, run `make setup` to create it from config.mk.example, then update values manually.
+query/get-config:
+	$(DAEMON) query wasm contract-state smart $(CONTRACT_ADDR) '$(GET_CONFIG_QUERY)' \
+    --node $(NODE_URL)
