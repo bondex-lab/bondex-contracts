@@ -8,10 +8,8 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Terminate {},
-    UpdateAdmin { admin: Option<String> },
-    WithdrawFunds {}, //todo: add params: destination_addr, Option<Coin>?, Option<CW20Coin>? or just all available?
-    PayoutBonds {}, //todo: add params: no params?
+    WithdrawFunds {},
+    PayoutBonds {},
     IssueBondSeries {
         /// Name of the NFT contract. todo: Collection or exact NFT?
         name: String,
@@ -19,7 +17,8 @@ pub enum ExecuteMsg {
         price_rate: Decimal, //Just because we will sell bonds for cw20, not for native tokens. We need to convert one to the other with rate
         number_of_bonds: u32,
         price_per_bond: Uint128, //price for cw20 tokens
-        bond_nft_code_id: u64, // cw721_base_code_id
+        bond_nft_code_id: u64, // cw721_base_code_id todo: normal way is to get it from the factory contract managed by protocol team
+        bond_nft_fixed_price_code_id: u64, // cw721_fixed_price_code_id todo: normal way is to get it from the factory contract managed by protocol team
         symbol: String,
         token_uri: String,
     },

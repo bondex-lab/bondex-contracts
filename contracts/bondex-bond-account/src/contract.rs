@@ -49,10 +49,6 @@ pub fn execute(
     match msg {
         // ExecuteMsg::DoSomething {
         // } => execute_try_grpc(deps, env, info),
-        ExecuteMsg::Terminate {} => unimplemented!(),
-        ExecuteMsg::UpdateAdmin {
-            admin
-        } => unimplemented!(),
         ExecuteMsg::WithdrawFunds {} => execute_withdraw_funds(deps, env, info),
         ExecuteMsg::PayoutBonds {} => execute_payout_bonds(deps, env, info),
         ExecuteMsg::IssueBondSeries {
@@ -62,6 +58,7 @@ pub fn execute(
             number_of_bonds,
             price_per_bond,
             bond_nft_code_id,
+            bond_nft_fixed_price_code_id,
             symbol,
             token_uri
         } => execute_issue_bond_series(
@@ -74,6 +71,7 @@ pub fn execute(
             number_of_bonds,
             price_per_bond,
             bond_nft_code_id,
+            bond_nft_fixed_price_code_id,
             symbol,
             token_uri
         ),
@@ -90,6 +88,7 @@ fn execute_issue_bond_series(
     number_of_bonds: u32,
     price_per_bond: Uint128,
     bond_nft_code_id: u64,
+    bond_nft_fixed_price_code_id: u64,
     symbol: String,
     token_uri: String,
 ) -> Result<Response, ContractError> {
