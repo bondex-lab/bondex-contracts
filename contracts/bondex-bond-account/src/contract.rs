@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, GrpcQuery, MessageInfo, QueryRequest, Response, StdResult, to_json_binary};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, GrpcQuery, MessageInfo, QueryRequest, Response, StdResult, to_json_binary, Decimal, Uint128};
 use cw2::set_contract_version;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ConfigResponse};
 
@@ -55,7 +55,28 @@ pub fn execute(
         } => unimplemented!(),
         ExecuteMsg::WithdrawFunds {} => execute_withdraw_funds(deps, env, info),
         ExecuteMsg::PayoutBonds {} => execute_payout_bonds(deps, env, info),
-        ExecuteMsg::IssueBondSeries {} => execute_issue_bond_series(deps, env, info),
+        ExecuteMsg::IssueBondSeries {
+            name,
+            cw20_funding_token_addr,
+            price_rate,
+            number_of_bonds,
+            price_per_bond,
+            bond_nft_code_id,
+            symbol,
+            token_uri
+        } => execute_issue_bond_series(
+            deps,
+            env,
+            info,
+            name,
+            cw20_funding_token_addr,
+            price_rate,
+            number_of_bonds,
+            price_per_bond,
+            bond_nft_code_id,
+            symbol,
+            token_uri
+        ),
     }
 }
 
@@ -63,7 +84,20 @@ fn execute_issue_bond_series(
     mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    name: String,
+    cw20_funding_token_addr: String,
+    price_rate: Decimal,
+    number_of_bonds: u32,
+    price_per_bond: Uint128,
+    bond_nft_code_id: u64,
+    symbol: String,
+    token_uri: String,
 ) -> Result<Response, ContractError> {
+    //todo: validate - only an owner can call this
+
+    // todo: instantiate cw721fixed_price
+    // todo: save some params to the contract state
+
     unimplemented!()
 }
 
