@@ -42,8 +42,47 @@ schema:
 
 # Ensure config.mk exists and has valid values.
 # If missing, run `make setup` to create it from config.mk.example, then update values manually.
-deploy/store-code:
+deploy/store-code/bond-account:
 	$(DAEMON) tx wasm store artifacts/bondex_bond_account.wasm \
+		--from $(FROM) \
+		--chain-id $(CHAIN_ID) \
+		--node $(NODE_URL) \
+		--gas auto \
+		--gas-adjustment $(GAS_ADJ) \
+		--fees $(FEES) \
+		--keyring-backend=test \
+		-y
+
+# Ensure config.mk exists and has valid values.
+# If missing, run `make setup` to create it from config.mk.example, then update values manually.
+deploy/store-code/cw20:
+	$(DAEMON) tx wasm store cw20_base.wasm \
+		--from $(FROM) \
+		--chain-id $(CHAIN_ID) \
+		--node $(NODE_URL) \
+		--gas auto \
+		--gas-adjustment $(GAS_ADJ) \
+		--fees $(FEES) \
+		--keyring-backend=test \
+		-y
+
+# Ensure config.mk exists and has valid values.
+# If missing, run `make setup` to create it from config.mk.example, then update values manually.
+deploy/store-code/cw721-fixed-price:
+	$(DAEMON) tx wasm store nft_bond.wasm \
+		--from $(FROM) \
+		--chain-id $(CHAIN_ID) \
+		--node $(NODE_URL) \
+		--gas auto \
+		--gas-adjustment $(GAS_ADJ) \
+		--fees $(FEES) \
+		--keyring-backend=test \
+		-y
+
+# Ensure config.mk exists and has valid values.
+# If missing, run `make setup` to create it from config.mk.example, then update values manually.
+deploy/store-code/cw721-base:
+	$(DAEMON) tx wasm store cw721_base.wasm \
 		--from $(FROM) \
 		--chain-id $(CHAIN_ID) \
 		--node $(NODE_URL) \
@@ -56,7 +95,7 @@ deploy/store-code:
 INSTANTIATE_MSG := $(shell cat configs/instantiate_msg.json)
 # Ensure config.mk exists and has valid values.
 # If missing, run `make setup` to create it from config.mk.example, then update values manually.
-deploy/instantiate:
+deploy/instantiate/bond_account:
 	$(DAEMON) tx wasm instantiate $(CONTRACT_CODE_ID) '$(INSTANTIATE_MSG)' \
     --label "bondex_bond_account_instantiate_stub" \
     --from $(FROM) \
@@ -72,8 +111,22 @@ deploy/instantiate:
 ISSUE_BOND_SERIES_MSG := $(shell cat configs/issue_bond_series_msg.json)
 # Ensure config.mk exists and has valid values.
 # If missing, run `make setup` to create it from config.mk.example, then update values manually.
-execute/issue-bond-series:
+execute/bond-account/issue-bond-series:
 	$(DAEMON) tx wasm execute $(CONTRACT_ADDR) '$(ISSUE_BOND_SERIES_MSG)' \
+    --from $(FROM) \
+    --chain-id $(CHAIN_ID) \
+    --node $(NODE_URL) \
+    --gas auto \
+    --gas-adjustment $(GAS_ADJ) \
+    --fees $(FEES) \
+    --keyring-backend=test \
+    -y
+
+BUY_BOND_MSG := $(shell cat configs/buy_bond_msg.json)
+# Ensure config.mk exists and has valid values.
+# If missing, run `make setup` to create it from config.mk.example, then update values manually.
+execute/cw20/buy-bond:
+	$(DAEMON) tx wasm execute $(CONTRACT_CW20_ADDR) '$(BUY_BOND_MSG)' \
     --from $(FROM) \
     --chain-id $(CHAIN_ID) \
     --node $(NODE_URL) \
@@ -86,6 +139,19 @@ execute/issue-bond-series:
 GET_CONFIG_QUERY := $(shell cat configs/get_config_query.json)
 # Ensure config.mk exists and has valid values.
 # If missing, run `make setup` to create it from config.mk.example, then update values manually.
-query/get-config:
+query/bond-account/get-config:
 	$(DAEMON) query wasm contract-state smart $(CONTRACT_ADDR) '$(GET_CONFIG_QUERY)' \
+    --node $(NODE_URL)
+
+query/cw721-fixed-price/get-config:
+	$(DAEMON) query wasm contract-state smart $(CONTRACT_CW721_FIXED_PRICE_ADDR) '$(GET_CONFIG_QUERY)' \
+    --node $(NODE_URL)
+
+query/cw721-base/get-config:
+	$(DAEMON) query wasm contract-state smart $(CONTRACT_CW721_BASE_ADDR) '$(GET_CONFIG_QUERY)' \
+    --node $(NODE_URL)
+
+ALL_TOKENS_QUERY := $(shell cat configs/all_tokens_query.json)
+query/cw721-base/all_tokens:
+	$(DAEMON) query wasm contract-state smart $(CONTRACT_CW721_BASE_ADDR) '$(ALL_TOKENS_QUERY)' \
     --node $(NODE_URL)

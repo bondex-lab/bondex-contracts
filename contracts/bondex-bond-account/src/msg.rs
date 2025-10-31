@@ -21,6 +21,7 @@ pub enum ExecuteMsg {
         bond_nft_fixed_price_code_id: u64, // cw721_fixed_price_code_id todo: normal way is to get it from the factory contract managed by protocol team
         symbol: String,
         token_uri: String,
+        debt_payment_denom: String,
     },
 }
 
@@ -40,4 +41,24 @@ pub struct ConfigResponse {
     pub description: Option<String>,
     pub price_rate: Option<Decimal>, //just because we will sell bonds for cw20, not for native tokens
     pub outstanding_debt: Option<Coin>,
+}
+
+// pub type DefaultOptionalCollectionExtension = Option<CollectionExtension<RoyaltyInfo>>;
+#[cw_serde]
+pub struct InstantiateBondMsg {
+    // pub owner: Addr,
+    pub owner: String,
+    pub max_tokens: u32,
+    pub unit_price: Uint128,
+    /// Name of the NFT contract
+    pub name: String,
+    /// Symbol of the NFT contract
+    pub symbol: String,
+    /// Optional extension of the collection metadata
+    // pub collection_info_extension: TCollectionExtensionMsg,//optional too for 721base
+    pub token_code_id: u64,
+    pub cw20_address: Addr,
+    pub token_uri: String,
+    // pub extension: DefaultOptionalNftExtension,//optional too extension for exact 721base NFT
+    // pub withdraw_address: Option<String>,
 }
