@@ -16,4 +16,43 @@ pub enum ContractError {
 
     #[error("InvalidTokenReplyId")]
     InvalidTokenReplyId {},
+
+    #[error("Cw20AddressNotSet")]
+    Cw20AddressNotSet {},
+
+    #[error("Cw721FixedPriceAddressNotSet")]
+    Cw721FixedPriceAddressNotSet {},
+
+    #[error("NothingToWithdraw")]
+    NothingToWithdraw {},
+
+    #[error("NoFundsAvailable")]
+    NoFundsAvailable {},
+
+    #[error("Cw721FixedPriceNotSet")]
+    Cw721FixedPriceNotSet {},
+
+    #[error("InvalidResponse")]
+    InvalidResponse {},
+
+    #[error("Cw721BaseAddressNotSet")]
+    Cw721BaseAddressNotSet {},
+
+    #[error("NoPaymentDenomSet")]
+    NoPaymentDenomSet {},
+
+    #[error("NoActiveDebt")]
+    NoActiveDebt {},
+
+    #[error("NoInvestorsFound")]
+    NoInvestorsFound {},
+
+    #[error("MissingPriceRate")]
+    MissingPriceRate {},
+
+    #[error("NoOutstandingDebt")]
+    NoOutstandingDebt {},
+
+    #[error("NotEnoughFundsToPayout")]
+    NotEnoughFundsToPayout {},
 }

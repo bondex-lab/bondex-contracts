@@ -34,6 +34,9 @@ thiserror.workspace = true
 cw-utils.workspace = true
 cw-controllers.workspace = true
 base64 = "0.22.1"
+cw20 = "2.0.0"
+cw721-base = "0.20.0"
+cw721 = "0.20.0"
 
 [dev-dependencies]
 cw-multi-test.workspace = true

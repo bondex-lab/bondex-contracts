@@ -127,7 +127,7 @@ BUY_BOND_MSG := $(shell cat configs/buy_bond_msg.json)
 # If missing, run `make setup` to create it from config.mk.example, then update values manually.
 execute/cw20/buy-bond:
 	$(DAEMON) tx wasm execute $(CONTRACT_CW20_ADDR) '$(BUY_BOND_MSG)' \
-    --from $(FROM) \
+    --from $(FROM2) \
     --chain-id $(CHAIN_ID) \
     --node $(NODE_URL) \
     --gas auto \
@@ -155,3 +155,80 @@ ALL_TOKENS_QUERY := $(shell cat configs/all_tokens_query.json)
 query/cw721-base/all_tokens:
 	$(DAEMON) query wasm contract-state smart $(CONTRACT_CW721_BASE_ADDR) '$(ALL_TOKENS_QUERY)' \
     --node $(NODE_URL)
+
+query/cw20/balance-bob:
+	$(DAEMON) query wasm contract-state smart $(CONTRACT_CW20_ADDR) '{"balance":{"address":"$(BOB)"}}' \
+    --node $(NODE_URL)
+
+query/cw20/balance-alice:
+	$(DAEMON) query wasm contract-state smart $(CONTRACT_CW20_ADDR) '{"balance":{"address":"$(ALICE)"}}' \
+    --node $(NODE_URL)
+
+query/cw20/balance-cw721-fixed-price:
+	$(DAEMON) query wasm contract-state smart $(CONTRACT_CW20_ADDR) '{"balance":{"address":"$(CONTRACT_CW721_FIXED_PRICE_ADDR)"}}' \
+    --node $(NODE_URL)
+
+query/bank/balance-alice:
+	$(DAEMON) query bank balance $(ALICE) $(DENOM) \
+    --node $(NODE_URL)
+
+query/bank/balance-bob:
+	$(DAEMON) query bank balance $(BOB) $(DENOM) \
+    --node $(NODE_URL)
+
+
+query/bank/balance-bond-account:
+	$(DAEMON) query bank balance $(CONTRACT_ADDR) $(DENOM) \
+    --node $(NODE_URL)
+
+
+#CONTRACT_ADDR
+#BOB
+query/bank/send:
+	$(DAEMON) tx bank send $(ALICE) $(CONTRACT_ADDR) 10034580$(DENOM) \
+    --chain-id $(CHAIN_ID) \
+    --node $(NODE_URL) \
+    --fees $(FEES) \
+    --gas auto --gas-adjustment $(GAS_ADJ) \
+    --keyring-backend test \
+    -y
+
+
+query/cw20/transfer:
+	$(DAEMON) tx wasm execute $(CONTRACT_CW20_ADDR) \
+    '{"transfer": {"recipient": "$(BOB)", "amount": "1000"}}' \
+    --from $(ALICE) \
+    --chain-id $(CHAIN_ID) \
+    --node $(NODE_URL) \
+    --fees $(FEES) \
+    --gas auto --gas-adjustment $(GAS_ADJ) \
+    --keyring-backend test \
+    -y
+
+WITHDRAW_MSG := $(shell cat configs/withdraw_msg.json)
+# Ensure config.mk exists and has valid values.
+# If missing, run `make setup` to create it from config.mk.example, then update values manually.
+execute/bond-account/withdraw:
+	$(DAEMON) tx wasm execute $(CONTRACT_ADDR) '$(WITHDRAW_MSG)' \
+    --from $(FROM) \
+    --chain-id $(CHAIN_ID) \
+    --node $(NODE_URL) \
+    --gas auto \
+    --gas-adjustment $(GAS_ADJ) \
+    --fees $(FEES) \
+    --keyring-backend=test \
+    -y
+
+PAYOUT_BONDS_MSG := $(shell cat configs/payout_bonds_msg.json)
+# Ensure config.mk exists and has valid values.
+# If missing, run `make setup` to create it from config.mk.example, then update values manually.
+execute/bond-account/payout-bonds:
+	$(DAEMON) tx wasm execute $(CONTRACT_ADDR) '$(PAYOUT_BONDS_MSG)' \
+    --from $(FROM) \
+    --chain-id $(CHAIN_ID) \
+    --node $(NODE_URL) \
+    --gas auto \
+    --gas-adjustment $(GAS_ADJ) \
+    --fees $(FEES) \
+    --keyring-backend=test \
+    -y

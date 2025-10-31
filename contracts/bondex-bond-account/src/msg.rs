@@ -70,3 +70,46 @@ pub struct InstantiateBondMsg {
     // pub extension: DefaultOptionalNftExtension,//optional too extension for exact 721base NFT
     // pub withdraw_address: Option<String>,
 }
+
+// #[cw_serde]
+// #[derive(QueryResponses)]
+// pub enum Query721FixedPriceMsg {
+//     #[returns(Config721FixedPriceResponse)]
+//     GetConfig {},
+// }
+
+// #[cw_serde]
+// pub struct Config721FixedPriceResponse {
+//     pub owner: Addr,
+//     pub cw20_address: Addr,
+//     pub cw721_address: Option<Addr>,
+//     pub max_tokens: u32,
+//     pub unit_price: Uint128,
+//     pub name: String,
+//     pub symbol: String,
+//     pub token_uri: String,
+//     // pub extension: DefaultOptionalNftExtension,
+//     pub extension: Option<NftExtension>,
+//     pub unused_token_id: u32,
+// }
+
+// #[cw_serde]
+// #[derive(Default)]
+// pub struct NftExtension {
+//     pub image: Option<String>,
+//     pub image_data: Option<String>,
+//     pub external_url: Option<String>,
+//     pub description: Option<String>,
+//     pub name: Option<String>,
+//     pub attributes: Option<Vec<Trait>>,
+//     pub background_color: Option<String>,
+//     pub animation_url: Option<String>,
+//     pub youtube_url: Option<String>,
+// }
+
+// #[cw_serde]
+// pub struct Trait {
+//     pub display_type: Option<String>,
+//     pub trait_type: String,
+//     pub value: String,
+// }
