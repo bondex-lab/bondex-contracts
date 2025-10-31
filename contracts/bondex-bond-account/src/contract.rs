@@ -1,10 +1,14 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, GrpcQuery, MessageInfo, QueryRequest, Response, StdResult, to_json_binary, Decimal, Uint128, WasmMsg, SubMsg, Coin, Reply, Addr};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, GrpcQuery, MessageInfo, QueryRequest, Response, StdResult, to_json_binary, Decimal, Uint128, WasmMsg, SubMsg, Coin, Reply, Addr, BankMsg};
+use cw20::BalanceResponse;
 use cw2::set_contract_version;
 use cw_utils::parse_instantiate_response_data;
+use crate::api_721_fixed_price;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ConfigResponse, InstantiateBondMsg};
-
+use cw721_base::msg as cw721_base_msg;
+use cw721::msg as cw721_msg;
+use schemars::_serde_json::json;
 use crate::error::ContractError;
 use crate::state::{Config, CONFIG};
 
@@ -178,13 +182,94 @@ fn execute_payout_bonds(
     env: Env,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
-    // todo: can anyone call this?
-    // todo: check native token availability
-    // todo: collect all list of investors
-    // todo: calculate avg payment for each, based on native token to cw20 token price_rate
-    // todo: pay for each investor exact amount of native tokens
+    let cfg = CONFIG.load(deps.storage)?;
 
-    unimplemented!()
+    let debt = cfg
+        .outstanding_debt
+        .ok_or(ContractError::NoOutstandingDebt {})?;
+
+    let native_balance: Coin = deps
+        .querier
+        .query_balance(
+            env.contract.address.clone(),
+            debt.denom
+        )?;
+
+    if native_balance.amount.is_zero() {
+        return Err(ContractError::NoFundsAvailable {});
+    }
+
+    let fixed_price_addr = cfg
+        .cw721_fixed_price_addr
+        .ok_or(ContractError::Cw721FixedPriceNotSet {})?;
+
+    let config_721_fixed_price_resp: api_721_fixed_price::ConfigResponse = deps.querier.query_wasm_smart(
+        fixed_price_addr.clone(),
+        &api_721_fixed_price::QueryMsg::GetConfig {},
+    )?;
+
+    let cw721_base_addr = config_721_fixed_price_resp
+        .cw721_address
+        .ok_or(ContractError::Cw721BaseAddressNotSet {})?;
+
+    let tokens_resp: cw721_msg::TokensResponse = deps.querier.query_wasm_smart(
+        cw721_base_addr.clone(),
+        &cw721_base_msg::QueryMsg::AllTokens {
+            start_after: None,
+            limit: None
+        },
+    )?;
+
+    let mut owners: Vec<Addr> = Vec::new();
+    let number_of_investors : Uint128 = Uint128::new(tokens_resp.tokens.len() as u128);
+    for token_id in tokens_resp.tokens {
+        let bond_resp: cw721_msg::OwnerOfResponse = deps.querier.query_wasm_smart(
+            cw721_base_addr.clone(),
+            &cw721_base_msg::QueryMsg::OwnerOf {
+                token_id,
+                include_expired: None,
+            },
+        )?;
+        let investor_addr = deps.api.addr_validate(&bond_resp.owner)?;
+        owners.push(investor_addr);
+    }
+
+    if owners.is_empty() {
+        return Err(ContractError::NoInvestorsFound {});
+    }
+
+    let rate = cfg
+        .price_rate
+        .ok_or(ContractError::MissingPriceRate {})?;
+
+    let payout_avg = {
+        let as_decimal = Decimal::from_ratio(debt.amount, Uint128::new(1));
+        let payout_dec = as_decimal * rate;
+        payout_dec.to_uint_floor()
+    };
+
+    if payout_avg <= Uint128::new(0) {
+        return Err(ContractError::NotEnoughFundsToPayout {})
+    }
+
+    let total_payout = payout_avg * number_of_investors;
+
+    let mut msgs: Vec<BankMsg> = Vec::new();
+    for owner in owners {
+        msgs.push(BankMsg::Send {
+            to_address: owner.to_string(),
+            amount: vec![Coin {
+                denom: native_balance.denom.clone(),
+                amount: payout_avg,
+            }],
+        });
+    }
+
+    Ok(Response::new()
+        .add_messages(msgs)
+        .add_attribute("action", "payout_bonds")
+        .add_attribute("recipients", number_of_investors.to_string())
+        .add_attribute("each_payout", payout_avg.to_string()))
 }
 
 fn execute_withdraw_funds(
@@ -192,12 +277,93 @@ fn execute_withdraw_funds(
     env: Env,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
-    // todo: only owner can call this
-    // todo: do we need to check active debt and pay for it here?
-    // todo: withdraw native tokens over debt
-    // todo: withdraw all cw20 tokens
+    // todo withdraw native tokens over debt
 
-    unimplemented!()
+    let cfg = CONFIG.load(deps.storage)?;
+
+    // only owner can call this
+    if info.sender != cfg.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let cw20_addr = cfg
+        .cw20_funding_token_addr
+        .ok_or(ContractError::Cw20AddressNotSet {})?;
+
+    let cw721_fixed_price_addr = cfg
+        .cw721_fixed_price_addr
+        .ok_or(ContractError::Cw721FixedPriceAddressNotSet {})?;
+
+    let balance: BalanceResponse = deps.querier.query_wasm_smart(
+        cw20_addr.clone(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: cw721_fixed_price_addr.to_string(),
+        },
+    )?;
+
+    // let transfer_msg = WasmMsg::Execute { //todo: fix it! not from current contract, but from fixed price!
+    //     contract_addr: cw20_addr.to_string(),
+    //     msg: to_json_binary(&cw20::Cw20ExecuteMsg::Transfer {
+    //         recipient: cfg.owner.to_string(),
+    //         amount: balance.balance,
+    //     })?,
+    //     funds: vec![],
+    // };
+
+    // withdraw all cw20 tokens from cw721_fixed_price to owner
+    let transfer_msg = WasmMsg::Execute {
+        contract_addr: cw20_addr.to_string(),
+        msg: to_json_binary(&api_721_fixed_price::ExecuteMsg::TransferFundsToOwner {})?,
+        funds: vec![],
+    };
+
+    // withdraw native tokens
+    let mut result = Response::new();
+    let native_balance: Coin = deps
+        .querier
+        .query_balance(
+            env.contract.address.clone(),
+            cfg.outstanding_debt.clone().unwrap().denom
+        )?;
+
+    if !native_balance.amount.is_zero() {
+        let debt = cfg.outstanding_debt;
+
+        if debt.is_none() {
+            let msg = BankMsg::Send {
+                to_address: cfg.owner.to_string(),
+                amount: vec![native_balance.clone()],
+            };
+
+            result = result
+                .add_message(msg)
+                .add_attribute("action", "withdraw_all_native")
+                .add_attribute("recipient", cfg.owner.to_string())
+                .add_attribute("native_amount", native_balance.amount.to_string())
+                .add_attribute("native_denom", native_balance.denom.to_string());
+        } else {
+            let debt_token = debt.unwrap();
+            let payment_amount = native_balance.amount - debt_token.amount;
+            let msg = BankMsg::Send {
+                to_address: cfg.owner.to_string(),
+                amount: vec![Coin::new(payment_amount, debt_token.denom)],
+            };
+
+            result = result
+                .add_message(msg)
+                .add_attribute("action", "withdraw_available_after_debt_native")
+                .add_attribute("recipient", cfg.owner.to_string())
+                .add_attribute("native_amount", native_balance.amount.to_string())
+                .add_attribute("native_denom", native_balance.denom.to_string());
+        }
+    }
+
+
+    Ok(result
+        .add_message(transfer_msg)
+        .add_attribute("action", "withdraw_cw20_funds")
+        .add_attribute("recipient", cfg.owner)
+        .add_attribute("amount_cw20", balance.balance))
 }
 
 fn execute_try_grpc(

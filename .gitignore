@@ -36,8 +36,8 @@ debug/
 .DS_Store
 
 # Deploy configs
-configs/config.mk
-configs/instantiate_msg.json
+#configs/config.mk
+#configs/instantiate_msg.json
 
 # === GitHub Actions artifacts (optional) ===
 /artifacts/
