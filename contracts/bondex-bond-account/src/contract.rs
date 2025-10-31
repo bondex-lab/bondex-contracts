@@ -1,9 +1,10 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, GrpcQuery, MessageInfo, QueryRequest, Response, StdResult, to_json_binary, Decimal, Uint128, WasmMsg, SubMsg, Coin, Reply, Addr};
+use cw20::{BalanceResponse as Cw20BalanceResponse};
 use cw2::set_contract_version;
 use cw_utils::parse_instantiate_response_data;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ConfigResponse, InstantiateBondMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ConfigResponse, InstantiateBondMsg, BalancesResponse};
 
 use crate::error::ContractError;
 use crate::state::{Config, CONFIG};
@@ -210,9 +211,10 @@ fn execute_try_grpc(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetConfig {} => to_json_binary(&query_config(deps)?),
+        QueryMsg::GetBalances {} => to_json_binary(&query_balances(deps, env)?),
     }
 }
 
@@ -226,6 +228,28 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         description: config.description,
         price_rate: config.price_rate,
         outstanding_debt: config.outstanding_debt,
+    })
+}
+
+fn query_balances(deps: Deps, env: Env) -> StdResult<BalancesResponse> {
+    let config = CONFIG.load(deps.storage)?;
+
+    let cw20_addr = config.cw20_funding_token_addr.unwrap();
+    let cw721_addr = config.cw721_fixed_price_addr.unwrap();
+
+    let cw20_balance: Cw20BalanceResponse = deps.querier.query_wasm_smart(
+        cw20_addr.clone(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: cw721_addr.to_string(),
+        },
+    )?;
+
+    let native_denom = config.outstanding_debt.unwrap().denom;
+    let bank_balance: Coin = deps.querier.query_balance(env.contract.address, native_denom)?;
+
+    Ok(BalancesResponse {
+        native_token_balance: bank_balance,
+        cw20_token_balance: cw20_balance.balance
     })
 }
 

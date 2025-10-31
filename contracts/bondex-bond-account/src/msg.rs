@@ -30,6 +30,8 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(ConfigResponse)]
     GetConfig {},
+    #[returns(BalancesResponse)]
+    GetBalances {}
 }
 
 #[cw_serde]
@@ -41,6 +43,12 @@ pub struct ConfigResponse {
     pub description: Option<String>,
     pub price_rate: Option<Decimal>, //just because we will sell bonds for cw20, not for native tokens
     pub outstanding_debt: Option<Coin>,
+}
+
+#[cw_serde]
+pub struct BalancesResponse {
+    pub native_token_balance: Coin,
+    pub cw20_token_balance: Uint128,
 }
 
 // pub type DefaultOptionalCollectionExtension = Option<CollectionExtension<RoyaltyInfo>>;
