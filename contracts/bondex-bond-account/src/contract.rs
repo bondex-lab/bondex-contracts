@@ -178,6 +178,12 @@ fn execute_payout_bonds(
     env: Env,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
+    // todo: can anyone call this?
+    // todo: check native token availability
+    // todo: collect all list of investors
+    // todo: calculate avg payment for each, based on native token to cw20 token price_rate
+    // todo: pay for each investor exact amount of native tokens
+
     unimplemented!()
 }
 
@@ -186,6 +192,11 @@ fn execute_withdraw_funds(
     env: Env,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
+    // todo: only owner can call this
+    // todo: do we need to check active debt and pay for it here?
+    // todo: withdraw native tokens over debt
+    // todo: withdraw all cw20 tokens
+
     unimplemented!()
 }
 
